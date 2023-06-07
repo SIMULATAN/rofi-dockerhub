@@ -17,7 +17,7 @@ function set_mode() {
 }
 
 function run() {
-	[ -f "$mode_file" ] && current_mode="$(cat "$mode_file")"
+	[ -f "$mode_file" ] && current_mode=$(cat "$mode_file")
 
 	if { { [[ -z "$current_mode" ]] || [[ "$current_mode" = "" ]]; } && [[ "$#" -eq 0 ]]; } \
 		|| { [[ "$current_mode" = "$mode_select" ]] && [[ "$*" = "$different_query_string" ]]; }; then
@@ -30,7 +30,7 @@ function run() {
 		echo "title:Select Image"
 		set_mode $mode_select
 
-		response="$(curl --no-progress-meter 'https://hub.docker.com/api/content/v1/products/search?page_size=25&q='"$*" -H 'Search-Version: v3')"
+		response=$(curl --no-progress-meter 'https://hub.docker.com/api/content/v1/products/search?page_size=25&q='"$*" -H 'Search-Version: v3')
 
 		echo "$different_query_string"
 		echo "$response" | jq '.summaries[] | " " + (.star_count|tostring) + " " + .name + " (" + .pull_count + " 󰇚)"' -r
@@ -51,9 +51,9 @@ function run() {
 	function inspect_mode() {
 		echo "title:Select Action"
 		set_mode $mode_inspect
-		image="$(get_full_image_name "$1")"
+		image=$(get_full_image_name "$1")
 
-		response="$(curl --no-progress-meter 'https://hub.docker.com/v2/repositories/'"$image"'/')"
+		response=$(curl --no-progress-meter 'https://hub.docker.com/v2/repositories/'"$image"'/')
 
 		echo "$view_tags_string$image"
 		echo "  $(echo "$response" | jq -r '.user + "/" + .name')"
@@ -67,17 +67,17 @@ function run() {
 		echo "title:Query Tag"
 		set_mode $mode_tags
 
-		image="$(get_full_image_name "$1")"
+		image=$(get_full_image_name "$1")
 
-		response="$(curl --no-progress-meter 'https://hub.docker.com/v2/repositories/'"$image"'/tags/?page_size=100')"
+		response=$(curl --no-progress-meter 'https://hub.docker.com/v2/repositories/'"$image"'/tags/?page_size=100')
 
 		echo "$response" | jq -r '.results[] | .name + " (" + ([ .images[].architecture ] | unique | join(", ")) + ")"'
 	}
 
-	if [[ "$current_mode" = "$mode_startpage" ]]; then
+	if [[ $current_mode = "$mode_startpage" ]]; then
 		search_mode "$@"
 	elif [[ "$current_mode" = "$mode_select" ]]; then
-		image="$(echo "$@" | cut -d ' ' -f 3)"
+		image=$(echo "$@" | cut -d ' ' -f 3)
 		inspect_mode "$image"
 	elif [[ "$current_mode" = "$mode_inspect" ]]; then
 		if [[ "$*" = "$view_tags_string"* ]]; then
@@ -86,16 +86,16 @@ function run() {
 	fi
 }
 
-echo "" > "$mode_file"
+echo > "$mode_file"
 while true; do
 	if [ -z "$prompt" ]; then
-		input="$(run)"
+		input=$(run)
 	else
-		input="$(run "$prompt")"
+		input=$(run "$prompt")
 	fi
 	echo "Opening mode $(cat "$mode_file")!"
-	header="$(echo "$input" | grep "title:" | sed 's/title://g' | tail -1)"
-	prompt="$(echo "$input" | grep -v "title:" | rofi -dmenu -p "${header:-Docker}")"
+	header=$(echo "$input" | grep "title:" | sed 's/title://g' | tail -1)
+	prompt=$(echo "$input" | grep -v "title:" | rofi -dmenu -p "${header:-Docker}")
 	if [ -z "$prompt" ]; then
 		exit
 	fi
